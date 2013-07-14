@@ -27,14 +27,38 @@ load 'rails/tasks/engine.rake'
 
 Bundler::GemHelper.install_tasks
 
-require 'rake/testtask'
 
-Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.libs << 'test'
-  t.pattern = 'test/**/*_test.rb'
-  t.verbose = false
+require 'active_record'
+begin
+  require 'rspec/core'
+  require 'rspec/core/rake_task'
+
+  namespace :spec do
+    RSpec::Core::RakeTask.new(:smoke => 'db:test:load') do |t|
+      t.rspec_opts = "--tag @smoke"
+      t.rspec_opts << " --format documentation --color --profile" if ENV['BUILD_NUMBER']
+    end
+
+    RSpec::Core::RakeTask.new(:fast, [:seed] => 'db:test:load') do |t, args|
+      t.pattern = FileList['spec/**/*_spec.rb'].exclude(/acceptance/)
+      t.rspec_opts = "--seed #{args[:seed]}" if args[:seed]
+      t.rspec_opts = "--format documentation --color --profile" if ENV['BUILD_NUMBER']
+    end
+
+    RSpec::Core::RakeTask.new(:sluggish => 'db:test:load') do |t|
+      t.pattern = Dir['./spec/**/*_spec.rb']
+      t.rspec_opts = "--format documentation --color --profile" if ENV['BUILD_NUMBER']
+    end
+
+    RSpec::Core::RakeTask.new(:acceptance => 'db:test:load') do |t|
+      t.pattern = ['spec/acceptance/**/*_spec.rb']
+      t.rspec_opts = "--format documentation --color --profile" if ENV['BUILD_NUMBER']
+    end
+  end
+rescue LoadError
+  # No worries. Rspec doesn't exist in this environment
 end
 
 
-task :default => :test
+
+task :default => ['db:test:prepare', 'spec:fast', 'spec:acceptance']

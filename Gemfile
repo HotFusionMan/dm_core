@@ -18,4 +18,7 @@ gem 'easy_globalize3_accessors',  :git => 'git://github.com/digitalmoksha/easy_g
 
 group :test, :development do
   gem 'rspec-rails', '~> 2.0'
+  gem 'actionpack', '~> 3.2.13'
+  gem 'easy_globalize3_accessors', :git => 'git://github.com/digitalmoksha/easy_globalize3_accessors.git'
+  gem 'mysql2'
 end
